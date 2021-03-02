@@ -10,7 +10,7 @@ Unix tools such as Awk. I have left this out as is.
 
 Author: Pradeep Banavara
 """
-
+from importlib import reload
 import re
 import json
 from fastapi import FastAPI, Depends, Request
@@ -19,6 +19,7 @@ import os
 from fastapi_login import LoginManager
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi_login.exceptions import InvalidCredentialsException
+from datetime import timedelta
 
 origins = ["http://localhost:3000"]
 SECRET = os.urandom(24).hex()
@@ -44,6 +45,7 @@ HEALTH_FILE_NAME= "../../collectinfo_output/collect_info_20200525_092140/2020052
 @manager.user_loader
 def load_user(email: str):
     user = fake_db.get(email)
+    print("User is {}".format(user))
     return user
 
 @app.post("/auth/token")
@@ -53,12 +55,11 @@ def login(request: Request, data: OAuth2PasswordRequestForm = Depends()):
     password = data.password
     user = load_user(email)
     if not user:
-        print("User blah")
         raise InvalidCredentialsException
     elif password != user['password']:
         raise InvalidCredentialsException
     access_token = manager.create_access_token(
-        data = dict(sub=email)
+        data = {'sub' : email}, expires=timedelta(hours=12)
     )
     return {'access_token': access_token, 'token_type': 'bearer'}
 
